@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O Cisne Negro - Termo de Autoamor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --nomad-creme: #e8e0d5;
+            --nomad-terracota: #a6735e;
+            --nomad-escuro: #3d2b1f;
+            --bordo: #4a0404;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            background-color: var(--nomad-creme);
+            overflow-x: hidden;
+            padding: 0;
+        }
+
+        .background-layers {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .nomad-shape {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.25;
+            border-radius: 50%;
+        }
+        .shape-1 { width: 80vw; height: 80vw; background-color: var(--nomad-terracota); top: -20%; right: -10%; }
+        .shape-2 { width: 60vw; height: 60vw; background-color: #c9b097; bottom: -10%; left: -5%; }
+
+        .noise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            opacity: 0.05;
+            pointer-events: none;
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
+        }
+
+        .content-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; 
+            width: 100%;
+            min-height: 100vh; 
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            cursor: pointer;
+            width: 95vw; 
+            max-width: 800px;
+            aspect-ratio: 4 / 3;
+            height: auto;
+            margin: auto; 
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            transition: margin 1s ease;
+            z-index: 10;
+        }
+
+        .envelope-part {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: top center;
+            /* Mais tempo e curva suave para um crossfade premium */
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        /* Camadas do Envelope */
+        .envelope-open-empty { opacity: 0; z-index: 1; }
+        .envelope-open-full { opacity: 0; z-index: 2; }
+        .envelope-closed { opacity: 1; z-index: 100; }
+
+        .letter {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, 0%) scale(0.95);
+            width: 540px;
+            max-width: 85vw;
+            background-color: #F8F5F0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        .paper-texture {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.04"/></svg>');
+            pointer-events: none;
+        }
+
+        .envelope-wrapper.open {
+            /* Espaço reajustado para comportar o novo texto maior da carta */
+            margin: 5vh auto 900px auto;
+        }
+
+        .envelope-wrapper.open .envelope-closed {
+            opacity: 0;
+            z-index: 1;
+        }
+
+        .envelope-wrapper.open .envelope-open-full {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        .envelope-wrapper.open.state-vazio .envelope-open-full {
+            opacity: 0;
+        }
+        .envelope-wrapper.open.state-vazio .envelope-open-empty {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        .envelope-wrapper.open .letter {
+            top: 90%; 
+            transform: translate(-50%, 0%) scale(1);
+            opacity: 1;
+            z-index: 150;
+            pointer-events: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+            /* A carta agora espera exatamente os 0.5s que o envelope demora a abrir */
+            transition-delay: 0.5s;
+        }
+
+        .envelope-wrapper:not(.open) .letter {
+            transition-delay: 0s;
+            transition-duration: 0.6s;
+        }
+
+        .letter-content {
+            position: relative;
+            z-index: 1;
+            padding: 60px 40px;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* Logótipo aumentado de 130px para 180px */
+        .letter-logo { width: 180px; margin: 0 auto 30px; }
+        
+        .letter-text {
+            color: var(--nomad-escuro);
+            font-size: 15px;
+            line-height: 1.7;
+            font-weight: 400;
+            text-align: left;
+        }
+        .letter-text p { margin-bottom: 16px; }
+        .letter-subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin: 30px 0 20px;
+            color: var(--nomad-escuro);
+        }
+
+        .signature-container {
+            margin-top: 30px;
+            border-bottom: 1px solid rgba(61, 43, 31, 0.2);
+            width: 100%;
+            max-width: 360px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .swan-feather {
+            width: 55px;
+            margin: 60px auto 30px;
+            opacity: 0.9;
+            transform: rotate(-12deg);
+            display: block;
+        }
+
+        .btn-enviar {
+            background-color: var(--nomad-escuro);
+            color: var(--nomad-creme);
+            padding: 16px 35px;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 260px;
+            border-radius: 2px;
+        }
+
+        .btn-enviar:hover { background-color: var(--bordo); }
+
+        #instruction {
+            position: absolute;
+            bottom: 5vh; 
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--nomad-escuro);
+            background: rgba(255,255,255,0.5);
+            padding: 8px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s ease;
+            z-index: 200;
+            margin: 0;
+        }
+
+        .hidden { opacity: 0; pointer-events: none; }
+
+        .success-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(61, 43, 31, 0.98);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            color: var(--nomad-creme);
+            text-align: center;
+        }
+
+        @media (max-width: 640px) {
+            .letter-content { padding: 40px 20px; }
+            .letter-text { font-size: 13px; }
+            /* Ajustado para comportar o texto maior em telemóveis */
+            .envelope-wrapper.open { margin: 5vh auto 1000px auto; } 
+        }
+    </style>
+</head>
+<body id="pageBody">
+
+    <div class="background-layers">
+        <div class="nomad-shape shape-1"></div>
+        <div class="nomad-shape shape-2"></div>
+    </div>
+    <div class="noise-overlay"></div>
+
+    <div class="content-container" id="mainContainer">
+        <div class="envelope-wrapper" id="envelopeWrapper" onclick="toggleEnvelope()">
+            
+            <!-- Fundo do Envelope Aberto -->
+            <div class="envelope-part envelope-open-empty" style="background-image: url('https://raw.githubusercontent.com/laurareynol/Carta---Campanha-Cisne/main/EnvelopeAberto2.png');"></div>
+            
+            <!-- Meio do Envelope Aberto com Carta -->
+            <div class="envelope-part envelope-open-full" style="background-image: url('https://raw.githubusercontent.com/laurareynol/Carta---Campanha-Cisne/main/EnvelopeAberto.png');"></div>
+
+            <!-- A Carta Digital deslizando para BAIXO -->
+            <div class="letter" id="letter" onclick="event.stopPropagation()">
+                <div class="paper-texture"></div>
+                <div class="letter-content">
+                    <img src="https://raw.githubusercontent.com/laurareynol/Carta---Campanha-Cisne/main/CISNENEGRO_LOGOTIPO_RGB_MARROM.png" alt="Cisne Negro" class="letter-logo">
+
+                    <div class="letter-text">
+                        <p>No aniversário de 8 anos do nosso estúdio, acreditamos que o movimento mais importante é aquele que você faz em direção a si mesma. Por isso, esta não é apenas uma carta; é uma declaração de autoamor.</p>
+                        <p>Ao assinar este documento, você assume um compromisso de 8 dias. Oito dias para processar a força que descobriu hoje e decidir que o seu bem-estar merece ser sua prioridade absoluta.</p>
+
+                        <h4 class="letter-subtitle" style="font-size: 14px; letter-spacing: 2px; margin: 25px 0 15px;">O Seu Presente de Boas-Vindas</h4>
+                        
+                        <p>Ao celebrar conosco este marco e devolver esta carta assinada dentro do prazo de 8 dias, você garante benefícios exclusivos para iniciar sua jornada:</p>
+                        
+                        <p><strong>Desconto Comemorativo:</strong> 8% de desconto na adesão do seu primeiro plano.</p>
+                        <p><strong>Workshop Especial:</strong> Acesso a um Workshop Especial de Aniversário desenhado para aprofundar sua conexão com o corpo.</p>
+
+                        <h3 class="letter-subtitle">O MEU INTENTO</h3>
+
+                        <p>"Me comprometo a honrar o meu processo e a ouvir o chamado do meu corpo. No prazo de 8 dias, retorno ao estúdio para transformar minha experiência em jornada."</p>
+                    </div>
+
+                    <div class="signature-container">
+                        <canvas id="signature-pad"></canvas>
+                    </div>
+                    
+                    <img src="https://raw.githubusercontent.com/laurareynol/Carta---Campanha-Cisne/main/PenaMarrom.png" class="swan-feather">
+
+                    <button class="btn-enviar" onclick="submitSignature()">Confirmar Assinatura</button>
+                </div>
+            </div>
+
+            <!-- Frente do Envelope Fechado -->
+            <div class="envelope-part envelope-closed" style="background-image: url('https://raw.githubusercontent.com/laurareynol/Carta---Campanha-Cisne/main/EnvelopeFechado2.png');"></div>
+        </div>
+
+        <p id="instruction" class="animate-pulse">Toque ou role para abrir</p>
+    </div>
+
+    <div id="successOverlay" class="success-overlay">
+        <div class="px-6">
+            <h2 class="font-serif text-3xl mb-4 tracking-[0.2em]" style="font-family: 'Cinzel', serif">Voo Confirmado</h2>
+            <p class="text-sm opacity-70 mb-8 font-light tracking-widest">O seu compromisso foi registado.</p>
+            <p class="text-[10px] uppercase tracking-[0.3em] opacity-40">A redirecionar para o WhatsApp...</p>
+        </div>
+    </div>
+
+    <script>
+        const WHATSAPP_NUMBER = "5562994778975"; 
+        const WHATSAPP_MESSAGE = "Me comprometo a honrar o meu processo!";
+
+        const envelope = document.getElementById('envelopeWrapper');
+        const instruction = document.getElementById('instruction');
+        const letter = document.getElementById('letter');
+        const canvas = document.getElementById('signature-pad');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        function openEnvelope() {
+            if (envelope.classList.contains('open')) return; 
+
+            envelope.classList.add('open');
+            instruction.classList.add('hidden');
+            
+            // Agora espera os 0.5s inteiros da primeira transição para transitar para o fundo vazio
+            setTimeout(() => {
+                envelope.classList.add('state-vazio');
+            }, 500);
+
+            // Ajustado para permitir que o utilizador acompanhe a carta deslizando suavemente
+            setTimeout(() => {
+                letter.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setupSignaturePad();
+            }, 800);
+        }
+
+        function toggleEnvelope() {
+            if (!envelope.classList.contains('open')) {
+                openEnvelope();
+            } else {
+                envelope.classList.remove('open');
+                envelope.classList.remove('state-vazio');
+                instruction.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY > 0 && !envelope.classList.contains('open')) {
+                openEnvelope();
+            }
+        }, { passive: true });
+
+        let touchStartY = 0;
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            let touchEndY = e.touches[0].clientY;
+            if (touchStartY - touchEndY > 50 && !envelope.classList.contains('open')) {
+                openEnvelope();
+            }
+        }, { passive: true });
+
+        function setupSignaturePad() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.strokeStyle = "#4a0404";
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+                return { x, y };
+            };
+
+            const start = (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+            const move = (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+            const end = () => drawing = false;
+
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); });
+            canvas.addEventListener('touchend', end);
+        }
+
+        function submitSignature() {
+            const blank = document.createElement('canvas');
+            blank.width = canvas.width;
+            blank.height = canvas.height;
+            if (canvas.toDataURL() === blank.toDataURL()) return;
+
+            document.getElementById('successOverlay').style.display = 'flex';
+            setTimeout(() => {
+                window.location.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
