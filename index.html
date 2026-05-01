@@ -85,7 +85,6 @@
             background-size: contain;
             background-repeat: no-repeat;
             background-position: top center;
-            /* Mais tempo e curva suave para um crossfade premium */
             transition: opacity 0.5s ease-in-out;
             pointer-events: none;
         }
@@ -122,8 +121,7 @@
         }
 
         .envelope-wrapper.open {
-            /* Espaço reajustado para comportar o novo texto maior da carta */
-            margin: 5vh auto 900px auto;
+            margin: 5vh auto 950px auto;
         }
 
         .envelope-wrapper.open .envelope-closed {
@@ -151,7 +149,6 @@
             z-index: 150;
             pointer-events: auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.12);
-            /* A carta agora espera exatamente os 0.5s que o envelope demora a abrir */
             transition-delay: 0.5s;
         }
 
@@ -168,7 +165,6 @@
             width: 100%;
         }
 
-        /* Logótipo aumentado de 130px para 180px */
         .letter-logo { width: 180px; margin: 0 auto 30px; }
         
         .letter-text {
@@ -233,7 +229,7 @@
 
         #instruction {
             position: absolute;
-            bottom: 5vh; 
+            bottom: 12vh; /* Desktop Default */
             font-size: 10px;
             letter-spacing: 3px;
             text-transform: uppercase;
@@ -243,12 +239,13 @@
             padding: 8px 25px;
             border-radius: 50px;
             backdrop-filter: blur(5px);
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease;
             z-index: 200;
             margin: 0;
+            pointer-events: none;
         }
 
-        .hidden { opacity: 0; pointer-events: none; }
+        .hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
 
         .success-overlay {
             display: none;
@@ -265,8 +262,17 @@
         @media (max-width: 640px) {
             .letter-content { padding: 40px 20px; }
             .letter-text { font-size: 13px; }
-            /* Ajustado para comportar o texto maior em telemóveis */
             .envelope-wrapper.open { margin: 5vh auto 1000px auto; } 
+
+            /* Ajuste da Tooltip para mobile: mais próxima do envelope */
+            #instruction {
+                bottom: auto;
+                top: calc(50% + 120px); /* Posiciona logo abaixo do centro do envelope */
+            }
+            
+            .envelope-wrapper {
+                margin-top: -10vh; /* Sobe um pouco o envelope para centralizar melhor com a tooltip */
+            }
         }
     </style>
 </head>
@@ -351,12 +357,10 @@
             envelope.classList.add('open');
             instruction.classList.add('hidden');
             
-            // Agora espera os 0.5s inteiros da primeira transição para transitar para o fundo vazio
             setTimeout(() => {
                 envelope.classList.add('state-vazio');
             }, 500);
 
-            // Ajustado para permitir que o utilizador acompanhe a carta deslizando suavemente
             setTimeout(() => {
                 letter.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 setupSignaturePad();
@@ -422,7 +426,10 @@
             const blank = document.createElement('canvas');
             blank.width = canvas.width;
             blank.height = canvas.height;
-            if (canvas.toDataURL() === blank.toDataURL()) return;
+            if (canvas.toDataURL() === blank.toDataURL()) {
+                // Opcional: Feedback visual de que precisa assinar
+                return;
+            }
 
             document.getElementById('successOverlay').style.display = 'flex';
             setTimeout(() => {
